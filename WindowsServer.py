@@ -3,43 +3,72 @@
 
 import socket
 import pyaudio
-import threading # For future use, if needed
 import time
+import signal
+import sys
 
 # Audio capture configuration
-SAMPLE_RATE = 44100
-CHANNELS = 2
-FORMAT = pyaudio.paInt16
 CHUNK = 1024
-TCP_HOST = '127.0.0.1'
-TCP_PORT = 5000
+FORMAT = pyaudio.paInt16
+CHANNELS = 2
+RATE = 44100
+# Server port for TCP connection
+TCP_HOST = '0.0.0.0'
+TCP_PORT = 5001
 
-# Initialize PyAudio
+running = True
+
+def signal_handler(sig, frame):
+    global running
+    print("\n[INFO] Termination signal received. Shutting down...")
+    running = False
+
+signal.signal(signal.SIGINT, signal_handler)
+
 p = pyaudio.PyAudio()
+
 stream = p.open(format=FORMAT,
                 channels=CHANNELS,
-                rate=SAMPLE_RATE,
+                rate=RATE,
                 input=True,
                 frames_per_buffer=CHUNK)
 
-print("[INFO] Waiting for Android device to connect via TCP (port 5000)...")
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server_socket.bind((TCP_HOST, TCP_PORT))
+server_socket.listen(1)
 
-while True:
+print(f"[INFO] Waiting for Android device to connect via TCP (port {TCP_PORT})...")
+
+while running:
     try:
-        # Attempt to connect to Android device
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect((TCP_HOST, TCP_PORT))
+        server_socket.settimeout(1.0)
+        try:
+            client_socket, addr = server_socket.accept()
+        except socket.timeout:
+            continue
+
         print("[INFO] Connected to Android device. Streaming audio...")
 
-        while True:
-            data = stream.read(CHUNK, exception_on_overflow=False)
-            client_socket.sendall(data)
+        while running:
+            try:
+                data = stream.read(CHUNK, exception_on_overflow=False)
+                client_socket.sendall(data)
+            except (BrokenPipeError, ConnectionResetError):
+                print("[WARN] Android disconnected unexpectedly.")
+                break
+            except Exception as e:
+                print(f"[ERROR] Unexpected send error: {e}")
+                break
 
-    except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError, socket.error) as e:
-        print(f"[WARN] Connection lost or refused: {e}. Retrying in 2 seconds...")
-        time.sleep(2)
-    finally:
-        try:
-            client_socket.close()
-        except:
-            pass
+        client_socket.close()
+        print("[INFO] Closed connection. Waiting for reconnect...")
+
+    except Exception as e:
+        print(f"[ERROR] Top-level server exception: {e}")
+
+stream.stop_stream()
+stream.close()
+p.terminate()
+server_socket.close()
+print("[INFO] Server shut down.")
