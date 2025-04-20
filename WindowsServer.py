@@ -1,4 +1,4 @@
-# Windows-side Python script to stream raw PCM audio over TCP (via ADB-forwarded port)
+# Windows-side Python script to stream raw PCM audio over TCP (via ADB-forwarded port) (https://vb-audio.com/Cable/)
 # Requires: pip install pyaudio - see the requirements.txt file 
 
 import socket
