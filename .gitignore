@@ -1,6 +1,48 @@
-.idea
-.venv
+# Kotlin/Java build output
+/build/
+/app/build/
 
-# Default ignored files
+# Gradle
+.gradle/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Gradle Wrapper
+gradle-app.setting
+gradlew
+gradlew.bat
+
+# IDE configs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Android Studio files (optional if relevant)
+local.properties
+*.apk
+*.ap_
+*.dex
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+*.log
+*.tmp
+*.swp
+**/logs/
+
+# Virtual environment (for Python tools or scripts)
+.venv/
+
+# Misc
+*.class
+*.jar
+*.war
+*.ear
+
+# IntelliJ shelf and workspace
 /shelf/
 /workspace.xml
