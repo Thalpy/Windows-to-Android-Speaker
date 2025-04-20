@@ -6,6 +6,6 @@ REM pip install the required libraries if not already installed
 pip install -r requirements.txt
 
 REM Launch the Python-based audio streamer (make sure virtual audio cable is default output)
-python stream_to_android.py
+python WindowsServer.py
 
 pause
